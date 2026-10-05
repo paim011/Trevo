@@ -32,7 +32,7 @@ function section(title: string) {
   console.log(`\n${LINE}\n${title}\n${LINE}`);
 }
 
-function preview(bytes: Uint8Array, length = 110): string {
+function preview(bytes: Uint8Array, length = 70): string {
   // Bytes que não formam texto válido aparecem como "·", para o print
   // mostrar a diferença entre texto legível e lixo sem quebrar o terminal.
   return Buffer.from(bytes)
@@ -271,7 +271,7 @@ function demoFrequencyAttack() {
     console.log(`  texto obtido pelo atacante: "${preview(attack.candidate)}"\n`);
   }
 
-  console.log(`Texto original:             "${TARGET_TEXT.slice(0, 110)}"`);
+  console.log(`Texto original:              "${TARGET_TEXT.slice(0, 70)}"`);
   console.log(
     "\n  → sem a folha 2, a cifra cai para análise de frequência. Com ela, o mesmo\n" +
       "    ataque não funciona. Limitação conhecida: a chave da folha 2 se repete a\n" +
