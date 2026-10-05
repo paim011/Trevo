@@ -1,9 +1,16 @@
-import { CaregiverAvailability, CareType, Prisma, Role } from "@prisma/client";
+import {
+  CaregiverAvailability,
+  CaregiverProfile,
+  CareType,
+  Prisma,
+  Role,
+} from "@prisma/client";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { authOptions } from "@/lib/auth";
+import { encryptOptionalField, tryDecryptField } from "@/lib/field-encryption";
 import { buildGeocodeQuery, geocodeAddress } from "@/lib/geocoding";
 import { PHONE_INVALID_MESSAGE, PHONE_REGEX } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
@@ -19,6 +26,15 @@ const updateSchema = z.object({
   visibleToFamilies: z.boolean().optional(),
   availabilityStatus: z.nativeEnum(CaregiverAvailability).optional(),
 });
+
+// O telefone fica cifrado no banco (ver lib/field-encryption.ts); a resposta
+// para o próprio dono do perfil devolve o valor decifrado.
+function decryptProfile(profile: CaregiverProfile) {
+  return {
+    ...profile,
+    phone: tryDecryptField(profile.phone, "caregiverProfile.phone", profile.userId),
+  };
+}
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -38,7 +54,7 @@ export async function GET() {
     where: { userId: session.user.id },
   });
 
-  return NextResponse.json({ profile });
+  return NextResponse.json({ profile: profile ? decryptProfile(profile) : null });
 }
 
 export async function PATCH(request: Request) {
@@ -76,7 +92,8 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const data = parsed.data;
+  const userId = session.user.id;
+  const { phone, ...data } = parsed.data;
 
   const addressChanged =
     (data.city !== undefined && data.city !== current.city) ||
@@ -98,11 +115,16 @@ export async function PATCH(request: Request) {
 
   try {
     const profile = await prisma.caregiverProfile.update({
-      where: { userId: session.user.id },
-      data: { ...data, ...geocodedFields },
+      where: { userId },
+      data: {
+        ...data,
+        // `undefined` (campo não enviado) continua significando "não alterar".
+        phone: encryptOptionalField(phone, "caregiverProfile.phone", userId),
+        ...geocodedFields,
+      },
     });
 
-    return NextResponse.json({ profile });
+    return NextResponse.json({ profile: decryptProfile(profile) });
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&

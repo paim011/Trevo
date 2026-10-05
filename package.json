@@ -10,6 +10,8 @@
     "lint": "eslint",
     "test:matching": "tsx scripts/test-matching.ts",
     "test:gale-shapley": "tsx scripts/test-gale-shapley.ts",
+    "test:encryption": "tsx scripts/test-field-encryption.ts",
+    "encrypt:existing": "tsx scripts/encrypt-existing-data.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
     "cleanup:demo": "tsx scripts/cleanup-demo.ts"
   },

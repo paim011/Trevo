@@ -11,6 +11,7 @@ import {
   MIN_REGISTRATION_AGE,
 } from "@/lib/age";
 import { BR_STATE_UFS } from "@/lib/br-states";
+import { encryptField } from "@/lib/field-encryption";
 import { buildGeocodeQuery, geocodeAddress } from "@/lib/geocoding";
 import { PHONE_INVALID_MESSAGE, PHONE_REGEX } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
@@ -106,14 +107,18 @@ export async function POST(request: Request) {
         },
       });
 
+      // Telefone e endereço são cifrados aqui dentro, e não antes da
+      // transação, porque a AAD da criptografia usa o id do usuário -- que
+      // só existe depois do `user.create` acima (ver lib/field-encryption.ts).
+      // A geocodificação já usou o endereço em texto puro antes, em memória.
       if (data.role === Role.FAMILY) {
         await tx.familyProfile.create({
           data: {
             userId: createdUser.id,
-            phone: data.phone,
+            phone: encryptField(data.phone, "familyProfile.phone", createdUser.id),
             city: data.city,
             state: data.state,
-            address: data.address,
+            address: encryptField(data.address, "familyProfile.address", createdUser.id),
             bio: data.bio,
             hourlyBudget: data.hourlyBudget,
             neededCareTypes: data.neededCareTypes ?? [],
@@ -126,7 +131,7 @@ export async function POST(request: Request) {
         await tx.caregiverProfile.create({
           data: {
             userId: createdUser.id,
-            phone: data.phone,
+            phone: encryptField(data.phone, "caregiverProfile.phone", createdUser.id),
             city: data.city,
             state: data.state,
             bio: data.bio,

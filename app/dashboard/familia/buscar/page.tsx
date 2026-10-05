@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { BackLink } from "@/app/dashboard/_components/back-link";
 import { CaregiverResults } from "@/app/dashboard/familia/buscar/_components/caregiver-results";
 import { authOptions } from "@/lib/auth";
+import { tryDecryptField } from "@/lib/field-encryption";
 import { rankCaregiversForFamily } from "@/lib/matching";
 import { matchingConfig } from "@/lib/matching-config";
 import { prisma } from "@/lib/prisma";
@@ -79,7 +80,14 @@ export default async function BuscarCuidadoresPage() {
                 .map((type) => CARE_TYPE_LABELS[type] ?? type)
                 .join(", ")}
               {" · "}
-              {[familyProfile.address, familyProfile.city]
+              {[
+                tryDecryptField(
+                  familyProfile.address,
+                  "familyProfile.address",
+                  session.user.id
+                ),
+                familyProfile.city,
+              ]
                 .filter(Boolean)
                 .join(", ")}
             </span>

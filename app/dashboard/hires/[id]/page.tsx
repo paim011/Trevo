@@ -9,6 +9,7 @@ import { CopyPhoneButton } from "@/app/dashboard/hires/[id]/_components/copy-pho
 import { authOptions } from "@/lib/auth";
 import { CARE_TYPE_LABELS } from "@/lib/care-types";
 import { formatDuration } from "@/lib/duration";
+import { tryDecryptField } from "@/lib/field-encryption";
 import { getHireDirectionLabel, HIRE_STATUS_LABELS } from "@/lib/hire-labels";
 import { buildWhatsAppUrl, formatPhoneForDisplay } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
@@ -70,9 +71,6 @@ export default async function HireDetailPage({
   }
 
   const otherParty = isFamily ? hire.caregiver : hire.family;
-  const otherPartyPhone = isFamily
-    ? hire.caregiver.caregiverProfile?.phone
-    : hire.family.familyProfile?.phone;
   const otherPartyProfileHref = isFamily
     ? `/dashboard/profile/caregiver/${hire.caregiverId}`
     : `/dashboard/profile/family/${hire.familyId}`;
@@ -86,6 +84,23 @@ export default async function HireDetailPage({
   // concretizou).
   const canShowContact =
     hire.status === HireStatus.ACCEPTED || hire.status === HireStatus.COMPLETED;
+
+  // O telefone fica cifrado no banco (ver lib/field-encryption.ts) e só é
+  // decifrado aqui, DEPOIS da checagem de status: enquanto a contratação
+  // não foi aceita, a decifração nem chega a acontecer.
+  const otherPartyPhone = !canShowContact
+    ? null
+    : isFamily
+      ? tryDecryptField(
+          hire.caregiver.caregiverProfile?.phone,
+          "caregiverProfile.phone",
+          hire.caregiverId
+        )
+      : tryDecryptField(
+          hire.family.familyProfile?.phone,
+          "familyProfile.phone",
+          hire.familyId
+        );
 
   const durationLabel =
     hire.acceptedAt && hire.completedAt

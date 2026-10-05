@@ -7,6 +7,7 @@ import {
 } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+import { encryptField } from "@/lib/field-encryption";
 import { buildGeocodeQuery, geocodeAddress, GeocodeResult } from "@/lib/geocoding";
 import { prisma } from "@/lib/prisma";
 
@@ -683,7 +684,6 @@ async function seedCaregivers(hashedPassword: string) {
         role: Role.CAREGIVER,
         caregiverProfile: {
           create: {
-            phone: seed.phone,
             city: seed.city,
             state: seed.state,
             bio: seed.bio,
@@ -697,6 +697,13 @@ async function seedCaregivers(hashedPassword: string) {
           },
         },
       },
+    });
+
+    // O telefone é cifrado com o id do usuário na AAD (ver
+    // lib/field-encryption.ts), e esse id só existe depois do create acima.
+    await prisma.caregiverProfile.update({
+      where: { userId: user.id },
+      data: { phone: encryptField(seed.phone, "caregiverProfile.phone", user.id) },
     });
 
     userIdByEmail.set(seed.email, user.id);
@@ -724,8 +731,6 @@ async function seedFamilies(hashedPassword: string) {
         role: Role.FAMILY,
         familyProfile: {
           create: {
-            phone: seed.phone,
-            address: seed.address,
             city: seed.city,
             state: seed.state,
             bio: seed.bio,
@@ -736,6 +741,15 @@ async function seedFamilies(hashedPassword: string) {
             longitude: geocoded?.longitude,
           },
         },
+      },
+    });
+
+    // Mesma razão do seedCaregivers: a AAD precisa do id do usuário.
+    await prisma.familyProfile.update({
+      where: { userId: user.id },
+      data: {
+        phone: encryptField(seed.phone, "familyProfile.phone", user.id),
+        address: encryptField(seed.address, "familyProfile.address", user.id),
       },
     });
 

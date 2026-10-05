@@ -42,10 +42,17 @@ Site de contratação de cuidadores: um marketplace de dois lados conectando:
 
 ## Requisito acadêmico (TCC)
 
-Este projeto também é o TCC do desenvolvedor. Requisitos específicos:
+Este projeto também é o TCC do desenvolvedor, na UNIP. A UNIP exige uma
+"intervenção" de uma disciplina do curso como assunto principal do
+trabalho; a escolhida, por indicação do orientador, é **criptografia e
+cibersegurança**. Requisitos específicos:
 
-- **Criptografia**: já satisfeito via bcrypt no hash de senhas (cost factor 12).
-- **Grafos**: o marketplace deve modelar a relação família-cuidador como um 
+- **Criptografia (assunto principal)**: hash de senhas com bcrypt (cost
+  factor 12) e criptografia em duas camadas dos dados sensíveis, sendo uma
+  delas uma cifra autoral obrigatória — ver "Criptografia em duas camadas"
+  abaixo.
+- **Grafos (opcional, mantido)**: não é mais obrigatório, mas continua no
+  app. O marketplace modela a relação família-cuidador como um 
   grafo bipartido ponderado (arestas = elegibilidade + peso combinando 
   distância via Haversine, tipo de cuidado, avaliação, preço). Além da busca 
   simples (ordenar arestas por peso), implementar o algoritmo de Gale-Shapley 
@@ -1582,6 +1589,68 @@ para o Supabase Storage, **sem fluxo de aprovação/rejeição implementado**:
   (`Document.status: VerificationStatus`, `reviewedAt: DateTime?`) já 
   suporta isso — só falta o painel/rota que faz a análise, que não existe 
   ainda porque não há papel de `ADMIN` operacional no app hoje.
+
+## Criptografia em duas camadas (núcleo do TCC)
+
+Telefone (`FamilyProfile.phone`, `CaregiverProfile.phone`) e endereço
+(`FamilyProfile.address`) ficam cifrados no banco, em duas camadas:
+
+```
+texto → Camada 1: Cifra Trevo (autoral, chave K1)
+      → Camada 2: AES-256-GCM (padrão, chave K2, IV aleatório, AAD)
+      → banco: "v1:<iv>:<texto cifrado>:<tag>" (base64url)
+```
+
+- **`lib/trevo-cipher.ts` — Cifra Trevo (camada autoral, obrigatória pelo
+  requisito do TCC)**: opera sobre bytes UTF-8, três "folhas" controladas
+  por uma chave de 32 bytes: (1) substituição por uma S-box gerada da chave
+  com Fisher-Yates; (2) deslocamento por posição, somando o byte da chave
+  da posição (Vigenère sobre bytes); (3) transposição por colunas (3 a 7
+  colunas, ordem vinda da chave). Decifra na ordem inversa. **Limitações
+  conhecidas, documentadas no próprio arquivo e parte da análise do TCC**:
+  determinística (sem IV), chave da folha 2 se repete a cada 32 bytes, sem
+  autenticação. Por isso nunca é usada sozinha.
+- **`lib/aes-gcm.ts` — camada padrão**: AES-256-GCM do `node:crypto`, sem
+  modificação no algoritmo. IV aleatório de 12 bytes por cifração, tag de
+  16 bytes (detecta adulteração).
+- **`lib/field-encryption.ts` — junta as duas**: `encryptField`/
+  `decryptField` (estrita, lança erro), `tryDecryptField` (para telas:
+  devolve `null` e registra no log só campo + dono, nunca o valor),
+  `encryptOptionalField` (preserva `undefined` = "não alterar" nos PATCH),
+  `isEncryptedField`. A adaptação do AES ao domínio está aqui: as chaves K1
+  e K2 são derivadas com HKDF-SHA256 de uma única chave mestra
+  (`FIELD_ENCRYPTION_KEY`, 32 bytes em base64 no `.env`/Vercel) com rótulos
+  diferentes — independentes entre si — e a **AAD** é
+  `trevo:<campo>:<User.id do dono>`, então um valor copiado para outro
+  usuário ou outro campo não decifra.
+- **Ordem das camadas é deliberada**: a Cifra Trevo fica por dentro, para o
+  GCM autenticar o resultado inteiro. A segurança real vem do AES; a cifra
+  autoral é a contribuição de estudo.
+- **Onde se cifra**: `POST /api/register` (dentro da transação, depois do
+  `user.create`, porque a AAD precisa do `User.id`; a geocodificação usa o
+  endereço em texto puro antes, só em memória), os `PATCH` de
+  `/api/family-profile` e `/api/caregiver-profile`, e
+  `scripts/seed-demo.ts` (cria o perfil e depois atualiza com os campos
+  cifrados, pelo mesmo motivo do id).
+- **Onde se decifra**: só no servidor e só para quem pode ver — o próprio
+  dono (telas de editar perfil, `GET`/`PATCH` dos perfis, barra-resumo de
+  `/dashboard/familia/buscar`) e a outra parte de um `Hire`, em
+  `/dashboard/hires/[id]`, onde a decifração só acontece **depois** da
+  checagem `canShowContact` (status `ACCEPTED`/`COMPLETED`).
+- **Dados antigos**: `scripts/encrypt-existing-data.ts`
+  (`npm run encrypt:existing`) cifra os valores ainda em texto puro.
+  Simula por padrão; só grava com `-- --apply`. Idempotente (pula o que já
+  começa com `v1:`). Precisa rodar uma vez em cada banco depois de
+  configurar `FIELD_ENCRYPTION_KEY` — sem isso, os valores antigos não
+  decifram e as telas mostram o campo vazio.
+- **Chave**: se `FIELD_ENCRYPTION_KEY` for perdida ou trocada, os dados
+  cifrados ficam ilegíveis. Precisa ser a mesma no `.env` local e na Vercel
+  (o banco é compartilhado).
+- **Testes**: `scripts/test-field-encryption.ts` (`npm run
+  test:encryption`), sem banco, com chave aleatória: ida e volta (acentos,
+  ç, vazio, bytes aleatórios de 0 a 64), S-box como permutação, ordem de
+  colunas, determinismo, chave errada, IV aleatório, adulteração detectada
+  pela tag, troca de dono/campo barrada pela AAD, texto puro recusado.
 
 ## Identidade do site
 
