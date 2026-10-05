@@ -1651,6 +1651,17 @@ texto → Camada 1: Cifra Trevo (autoral, chave K1)
   ç, vazio, bytes aleatórios de 0 a 64), S-box como permutação, ordem de
   colunas, determinismo, chave errada, IV aleatório, adulteração detectada
   pela tag, troca de dono/campo barrada pela AAD, texto puro recusado.
+- **Demonstrações de ataque para o capítulo de Resultados**:
+  `scripts/demo-attacks.ts` (`npm run demo:attacks`), sem banco, chaves
+  aleatórias a cada execução, saída formatada para print. Sete seções: o
+  que o banco grava; análise de frequência contra a Cifra Trevo (só folha
+  1, folhas 1+3 com força bruta das 5.910 ordens de colunas, e cifra
+  completa — com índice de coincidência de Friedman); determinismo da cifra
+  sozinha vs. IV aleatório do AES; adulteração detectada pela tag; troca de
+  dono/campo barrada pela AAD; chave errada; desempenho. Resultado típico:
+  sem a folha 2 o ataque recupera ~70% dos bytes, com ela ~1%; o índice de
+  coincidência cai de ~0,075 para ~0,006 (aleatório = 0,0039). Os números
+  variam um pouco por execução, já que as chaves são aleatórias.
 
 ## Identidade do site
 
