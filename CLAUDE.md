@@ -1682,6 +1682,13 @@ texto → Camada 1: Cifra Trevo (autoral, chave K1)
   OpenSSL 3, só criar o contexto do AES-GCM (`createCipheriv`) custa
   ~55 µs, então em campos curtos o custo fixo do AES domina e a Trevo é mais
   rápida que o AES.
+- **LGPD**: `docs/lgpd.md` é o rascunho da seção da monografia — inventário
+  de dados, dados sensíveis, medidas adotadas e as lacunas encontradas
+  (coordenadas em texto puro apesar do endereço cifrado, distância com
+  0,1 km permitindo triangulação, `GET /api/reviews` público expondo nome do
+  autor, sem exclusão/exportação de conta, bio com dados de saúde em texto
+  puro, envio do endereço ao Nominatim). Corrigir uma dessas lacunas no
+  código deve atualizar esse arquivo.
 
 ## Identidade do site
 
