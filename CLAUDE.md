@@ -1662,6 +1662,26 @@ texto → Camada 1: Cifra Trevo (autoral, chave K1)
   sem a folha 2 o ataque recupera ~70% dos bytes, com ela ~1%; o índice de
   coincidência cai de ~0,075 para ~0,006 (aleatório = 0,0039). Os números
   variam um pouco por execução, já que as chaves são aleatórias.
+- **Benchmark dos três cenários (experimento do TCC)**:
+  `scripts/benchmark-ciphers.ts` (`npm run benchmark`) compara C1 (Trevo
+  sozinha), C2 (AES-256-GCM sozinho) e C3 (a combinação da aplicação) com os
+  mesmos testes: correção, desempenho (30 rodadas, cenários alternados,
+  IC95), expansão, adulteração, entradas inválidas, determinismo,
+  estatística (entropia, índice de coincidência, qui-quadrado), avalanche e
+  ataque de frequência contra um chute trivial. **As hipóteses e critérios
+  ficam em `docs/hipoteses-e-criterios.md`, escritos antes da execução
+  oficial** — não editar esse arquivo para combinar com resultados; mudanças
+  vão em commit novo e justificadas no texto do TCC. Chaves e entradas vêm de
+  um gerador com semente (`--seed`, padrão `trevo-tcc`); só os IVs são
+  aleatórios. Grava CSV (`;` e vírgula decimal, para o Excel em português) e
+  `ambiente.json` (máquina, commit, semente, vereditos) em
+  `resultados/benchmark-<data>/`. `--quick` serve só para conferir o script
+  (pasta `-rapido`, ignorada pelo Git). As ferramentas de criptoanálise
+  ficam em `scripts/cryptanalysis.ts`, compartilhadas com
+  `demo-attacks.ts`. Achado das execuções rápidas: no Node 24 com
+  OpenSSL 3, só criar o contexto do AES-GCM (`createCipheriv`) custa
+  ~55 µs, então em campos curtos o custo fixo do AES domina e a Trevo é mais
+  rápida que o AES.
 
 ## Identidade do site
 

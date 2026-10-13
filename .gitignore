@@ -42,3 +42,6 @@ yarn-error.log*
 next-env.d.ts
 
 /app/generated/prisma
+
+# execuções rápidas do benchmark (só conferem o script; não são resultado oficial)
+/resultados/*-rapido/
