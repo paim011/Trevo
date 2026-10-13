@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 
+import { HealthDataConsentCheckbox } from "@/app/components/consent-checkboxes";
 import { LocationFields } from "@/app/components/location-fields";
 import { PhoneInput } from "@/app/components/phone-input";
 import { isCompletePhone, PHONE_INVALID_MESSAGE } from "@/lib/phone";
@@ -30,6 +31,7 @@ type InitialProfile = {
   hourlyBudget: string;
   neededCareTypes: string[];
   visibleToCaregivers: boolean;
+  healthDataConsent: boolean;
 };
 
 export function ProfileForm({ initialProfile }: { initialProfile: InitialProfile }) {
@@ -46,6 +48,9 @@ export function ProfileForm({ initialProfile }: { initialProfile: InitialProfile
   );
   const [visibleToCaregivers, setVisibleToCaregivers] = useState(
     initialProfile.visibleToCaregivers
+  );
+  const [healthDataConsent, setHealthDataConsent] = useState(
+    initialProfile.healthDataConsent
   );
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
@@ -76,6 +81,17 @@ export function ProfileForm({ initialProfile }: { initialProfile: InitialProfile
       return;
     }
 
+    // Desmarcar um consentimento já dado é revogação e apaga a descrição
+    // (abaixo); o erro é só para quem escreve uma descrição sem nunca ter
+    // autorizado.
+    if (form.bio.trim() && !healthDataConsent && !initialProfile.healthDataConsent) {
+      setStatus("error");
+      setMessage(
+        "Para manter uma descrição, autorize o tratamento das informações de saúde (ou apague a descrição)."
+      );
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -87,7 +103,10 @@ export function ProfileForm({ initialProfile }: { initialProfile: InitialProfile
           city: form.city || undefined,
           state: form.state || undefined,
           address: form.address || undefined,
-          bio: form.bio || undefined,
+          // Aqui uma descrição vazia é enviada como "" (apagar), não como
+          // "não alterar" -- é o único jeito de o usuário remover o texto.
+          bio: healthDataConsent ? form.bio : "",
+          healthDataConsent,
           hourlyBudget: form.hourlyBudget ? Number(form.hourlyBudget) : undefined,
           neededCareTypes,
           visibleToCaregivers,
@@ -103,6 +122,10 @@ export function ProfileForm({ initialProfile }: { initialProfile: InitialProfile
         return;
       }
 
+      // Revogar o consentimento apaga a descrição no servidor; espelha aqui.
+      if (!healthDataConsent) {
+        update("bio", "");
+      }
       setStatus("success");
       setMessage("Perfil atualizado com sucesso.");
       setLoading(false);
@@ -197,6 +220,10 @@ export function ProfileForm({ initialProfile }: { initialProfile: InitialProfile
             className={inputClass}
           />
         </div>
+        <HealthDataConsentCheckbox
+          checked={healthDataConsent}
+          onChange={setHealthDataConsent}
+        />
         <div>
           <label className="flex items-center gap-2 text-sm text-ink">
             <input

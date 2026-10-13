@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 
 import { authOptions } from "@/lib/auth";
-import { rankFamiliesForCaregiver } from "@/lib/matching";
+import { formatDistanceBand } from "@/lib/location-privacy";
+import { rankFamiliesForCaregiver, toFamilySearchResult } from "@/lib/matching";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -57,14 +58,15 @@ export async function GET() {
 
   const ranked = await rankFamiliesForCaregiver(caregiverProfile);
 
-  // Sem `address` aqui de propósito -- ver FamilyForDisplay em lib/matching.ts.
-  const results = ranked.map(({ family, distanceKm, matchScore }) => ({
+  // Sem `address`, coordenadas nem distância exata -- ver FamilySearchResult
+  // em lib/matching.ts.
+  const results = ranked.map(toFamilySearchResult).map(({ family, distanceBand, matchScore }) => ({
     familyId: family.userId,
     name: family.name,
     city: family.city,
     state: family.state,
     neededCareTypes: family.neededCareTypes,
-    distanceKm: Math.round(distanceKm * 10) / 10,
+    distance: formatDistanceBand(distanceBand),
     matchScore: Math.round(matchScore * 1000) / 1000,
   }));
 

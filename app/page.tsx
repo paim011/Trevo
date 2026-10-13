@@ -149,6 +149,10 @@ export default function HomePage() {
           </span>{" "}
           © {new Date().getFullYear()}
         </span>
+        <span aria-hidden="true">·</span>
+        <Link href="/privacidade" className="hover:text-ink hover:underline">
+          Política de privacidade
+        </Link>
       </footer>
     </main>
   );

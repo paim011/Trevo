@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { redirect } from "next/navigation";
 
+import { AccountDataSection } from "@/app/dashboard/_components/account-data-section";
 import { BackLink } from "@/app/dashboard/_components/back-link";
 import { authOptions } from "@/lib/auth";
 import { tryDecryptField } from "@/lib/field-encryption";
@@ -36,8 +37,10 @@ export default async function EditarPerfilFamiliaPage() {
             hourlyBudget: profile?.hourlyBudget ? profile.hourlyBudget.toString() : "",
             neededCareTypes: profile?.neededCareTypes ?? [],
             visibleToCaregivers: profile?.visibleToCaregivers ?? true,
+            healthDataConsent: Boolean(profile?.healthDataConsentAt),
           }}
         />
+        <AccountDataSection />
       </div>
     </main>
   );

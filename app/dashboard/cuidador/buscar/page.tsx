@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { BackLink } from "@/app/dashboard/_components/back-link";
 import { FamilyResults } from "@/app/dashboard/cuidador/buscar/_components/family-results";
 import { authOptions } from "@/lib/auth";
-import { rankFamiliesForCaregiver } from "@/lib/matching";
+import { rankFamiliesForCaregiver, toFamilySearchResult } from "@/lib/matching";
 import { matchingConfig } from "@/lib/matching-config";
 import { prisma } from "@/lib/prisma";
 import { errorTextClass, primaryButtonClass } from "@/lib/ui";
@@ -101,7 +101,7 @@ export default async function BuscarFamiliasPage() {
 
         {ranked.length > 0 && caregiverProfile && (
           <FamilyResults
-            results={ranked}
+            results={ranked.map(toFamilySearchResult)}
             caregiverCareTypes={caregiverProfile.careTypes}
           />
         )}

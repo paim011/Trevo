@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { BirthDateInput } from "@/app/components/birth-date-input";
+import { PrivacyPolicyCheckbox } from "@/app/components/consent-checkboxes";
 import { LocationFields } from "@/app/components/location-fields";
 import { PhoneInput } from "@/app/components/phone-input";
 import { RequiredMark } from "@/app/components/required-mark";
@@ -54,6 +55,7 @@ export default function CadastroCuidadorPage() {
   const router = useRouter();
   const [form, setForm] = useState(INITIAL_FORM);
   const [careTypes, setCareTypes] = useState<string[]>([]);
+  const [acceptPrivacyPolicy, setAcceptPrivacyPolicy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -121,6 +123,7 @@ export default function CadastroCuidadorPage() {
           hourlyRate: form.hourlyRate ? Number(form.hourlyRate) : undefined,
           experienceYears: form.experienceYears ? Number(form.experienceYears) : undefined,
           careTypes,
+          acceptPrivacyPolicy,
         }),
       });
 
@@ -309,6 +312,11 @@ export default function CadastroCuidadorPage() {
               className={inputClass}
             />
           </div>
+
+          <PrivacyPolicyCheckbox
+            checked={acceptPrivacyPolicy}
+            onChange={setAcceptPrivacyPolicy}
+          />
 
           {error && <p className={errorTextClass}>{error}</p>}
 

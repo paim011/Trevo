@@ -92,7 +92,18 @@ export async function POST(request: Request) {
   }
 }
 
+// Exige login (era pública): sem isso, um visitante anônimo descobria o
+// nome de quem contratou cada cuidador e o comentário que essa pessoa
+// escreveu (ver docs/lgpd.md, lacuna 8). A resposta também deixou de
+// devolver os registros inteiros -- ids de contratação e de autor não têm
+// utilidade para quem só quer ler as avaliações.
 export async function GET(request: Request) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const caregiverId = searchParams.get("caregiverId");
 
@@ -105,7 +116,13 @@ export async function GET(request: Request) {
 
   const reviews = await prisma.review.findMany({
     where: { targetId: caregiverId },
-    include: { author: { select: { name: true } } },
+    select: {
+      id: true,
+      rating: true,
+      comment: true,
+      createdAt: true,
+      author: { select: { name: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -113,5 +130,12 @@ export async function GET(request: Request) {
     reviews.map((review) => review.rating)
   );
 
-  return NextResponse.json({ reviews, average, total });
+  return NextResponse.json({
+    reviews: reviews.map(({ author, ...review }) => ({
+      ...review,
+      authorFirstName: author.name?.trim().split(/\s+/)[0] ?? null,
+    })),
+    average,
+    total,
+  });
 }

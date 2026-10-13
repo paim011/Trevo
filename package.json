@@ -14,6 +14,7 @@
     "demo:attacks": "tsx scripts/demo-attacks.ts",
     "benchmark": "tsx scripts/benchmark-ciphers.ts",
     "encrypt:existing": "tsx scripts/encrypt-existing-data.ts",
+    "round:coordinates": "tsx scripts/round-existing-coordinates.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
     "cleanup:demo": "tsx scripts/cleanup-demo.ts"
   },

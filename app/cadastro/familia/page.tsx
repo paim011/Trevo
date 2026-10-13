@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { BirthDateInput } from "@/app/components/birth-date-input";
+import {
+  HealthDataConsentCheckbox,
+  PrivacyPolicyCheckbox,
+} from "@/app/components/consent-checkboxes";
 import { LocationFields } from "@/app/components/location-fields";
 import { PhoneInput } from "@/app/components/phone-input";
 import { RequiredMark } from "@/app/components/required-mark";
@@ -54,6 +58,8 @@ export default function CadastroFamiliaPage() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [neededCareTypes, setNeededCareTypes] = useState<string[]>([]);
   const [visibleToCaregivers, setVisibleToCaregivers] = useState(true);
+  const [healthDataConsent, setHealthDataConsent] = useState(false);
+  const [acceptPrivacyPolicy, setAcceptPrivacyPolicy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -102,6 +108,13 @@ export default function CadastroFamiliaPage() {
       return;
     }
 
+    if (form.bio.trim() && !healthDataConsent) {
+      setError(
+        "Para incluir uma descrição, autorize o tratamento das informações de saúde (ou deixe a descrição em branco)."
+      );
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -122,6 +135,8 @@ export default function CadastroFamiliaPage() {
           hourlyBudget: form.hourlyBudget ? Number(form.hourlyBudget) : undefined,
           neededCareTypes,
           visibleToCaregivers,
+          healthDataConsent,
+          acceptPrivacyPolicy,
         }),
       });
 
@@ -305,6 +320,10 @@ export default function CadastroFamiliaPage() {
               className={inputClass}
             />
           </div>
+          <HealthDataConsentCheckbox
+            checked={healthDataConsent}
+            onChange={setHealthDataConsent}
+          />
           <div>
             <label className="flex items-center gap-2 text-sm text-ink">
               <input
@@ -321,6 +340,11 @@ export default function CadastroFamiliaPage() {
               contratar cuidadores normalmente.
             </p>
           </div>
+
+          <PrivacyPolicyCheckbox
+            checked={acceptPrivacyPolicy}
+            onChange={setAcceptPrivacyPolicy}
+          />
 
           {error && <p className={errorTextClass}>{error}</p>}
 

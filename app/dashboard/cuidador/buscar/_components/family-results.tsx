@@ -9,7 +9,8 @@ import { AvatarPlaceholder } from "@/app/dashboard/familia/_components/avatar-pl
 import { MatchScoreRing } from "@/app/dashboard/familia/_components/match-score-ring";
 import { InteresseButton } from "@/app/dashboard/cuidador/_components/interesse-button";
 import { getSharedCareTypes } from "@/lib/care-types";
-import type { FamilyForDisplay, RankedFamily } from "@/lib/matching";
+import { formatDistanceBand } from "@/lib/location-privacy";
+import type { FamilySearchResult } from "@/lib/matching";
 
 // Mesmo comprimento usado para qualquer outro truncamento de bio em nível
 // de card no app (não há precedente anterior para seguir -- este é o
@@ -47,14 +48,16 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 ];
 
 function sortResults(
-  results: RankedFamily<FamilyForDisplay>[],
+  results: FamilySearchResult[],
   sortKey: SortKey
-): RankedFamily<FamilyForDisplay>[] {
+): FamilySearchResult[] {
   const sorted = [...results];
 
   switch (sortKey) {
+    // Dentro da mesma faixa de distância, desempata pela compatibilidade --
+    // a distância exata não chega ao navegador (ver lib/location-privacy.ts).
     case "distance":
-      sorted.sort((a, b) => a.distanceKm - b.distanceKm);
+      sorted.sort((a, b) => a.distanceBand - b.distanceBand || b.matchScore - a.matchScore);
       break;
     case "matchScore":
       sorted.sort((a, b) => b.matchScore - a.matchScore);
@@ -68,7 +71,7 @@ export function FamilyResults({
   results,
   caregiverCareTypes,
 }: {
-  results: RankedFamily<FamilyForDisplay>[];
+  results: FamilySearchResult[];
   caregiverCareTypes: CareType[];
 }) {
   const [sortKey, setSortKey] = useState<SortKey>("matchScore");
@@ -95,7 +98,7 @@ export function FamilyResults({
       </div>
 
       <div className="space-y-5">
-        {sorted.map(({ family, distanceKm, matchScore }) => (
+        {sorted.map(({ family, distanceBand, matchScore }) => (
           <div
             key={family.userId}
             className="rounded-card border border-muted/20 bg-white p-6 shadow-sm sm:p-8"
@@ -135,7 +138,7 @@ export function FamilyResults({
               <div>
                 <dt className="text-xs text-muted">Distância</dt>
                 <dd className="font-mono text-sm text-ink/80">
-                  {distanceKm.toFixed(1)} km
+                  {formatDistanceBand(distanceBand)}
                 </dd>
               </div>
               <div>

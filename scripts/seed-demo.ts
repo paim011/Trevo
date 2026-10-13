@@ -682,6 +682,7 @@ async function seedCaregivers(hashedPassword: string) {
         name: seed.name,
         password: hashedPassword,
         role: Role.CAREGIVER,
+        privacyAcceptedAt: new Date(),
         caregiverProfile: {
           create: {
             city: seed.city,
@@ -729,11 +730,15 @@ async function seedFamilies(hashedPassword: string) {
         name: seed.name,
         password: hashedPassword,
         role: Role.FAMILY,
+        privacyAcceptedAt: new Date(),
         familyProfile: {
           create: {
             city: seed.city,
             state: seed.state,
             bio: seed.bio,
+            // Toda família demo tem descrição, então precisa do consentimento
+            // para dados de saúde (ver app/api/family-profile/route.ts).
+            healthDataConsentAt: new Date(),
             neededCareTypes: seed.neededCareTypes,
             hourlyBudget: seed.hourlyBudget,
             visibleToCaregivers: seed.visibleToCaregivers ?? true,

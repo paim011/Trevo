@@ -15,6 +15,7 @@ const updateSchema = z.object({
   state: z.string().optional(),
   address: z.string().optional(),
   bio: z.string().optional(),
+  healthDataConsent: z.boolean().optional(),
   hourlyBudget: z.number().positive().optional(),
   neededCareTypes: z.array(z.nativeEnum(CareType)).optional(),
   visibleToCaregivers: z.boolean().optional(),
@@ -87,7 +88,33 @@ export async function PATCH(request: Request) {
   }
 
   const userId = session.user.id;
-  const { phone, address, ...data } = parsed.data;
+  const { phone, address, bio, healthDataConsent, ...data } = parsed.data;
+
+  // A descrição pode conter informações de saúde (dado sensível, LGPD
+  // art. 11, I), então só é gravada com consentimento específico.
+  // `healthDataConsent` ausente mantém o consentimento atual; `false` é a
+  // revogação (art. 18, IX), que também apaga a descrição.
+  const consentGiven = healthDataConsent ?? current.healthDataConsentAt !== null;
+
+  if (bio?.trim() && !consentGiven) {
+    return NextResponse.json(
+      {
+        error:
+          "Para incluir uma descrição, autorize o tratamento das informações de saúde.",
+      },
+      { status: 400 }
+    );
+  }
+
+  const consentFields =
+    healthDataConsent === false
+      ? { healthDataConsentAt: null, bio: null }
+      : {
+          ...(healthDataConsent === true && current.healthDataConsentAt === null
+            ? { healthDataConsentAt: new Date() }
+            : {}),
+          ...(bio !== undefined ? { bio: bio.trim() || null } : {}),
+        };
 
   // O endereço salvo está cifrado: precisa ser decifrado para comparar com
   // o enviado e decidir se vale geocodificar de novo.
@@ -118,6 +145,7 @@ export async function PATCH(request: Request) {
       where: { userId },
       data: {
         ...data,
+        ...consentFields,
         // `undefined` (campo não enviado) continua significando "não alterar".
         phone: encryptOptionalField(phone, "familyProfile.phone", userId),
         address: encryptOptionalField(address, "familyProfile.address", userId),

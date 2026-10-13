@@ -1,7 +1,7 @@
 # Proteção de dados pessoais e LGPD (rascunho para a monografia)
 
-Rascunho da seção de LGPD do TCC, escrito a partir do código do Trevo no
-commit `d917a88`. Os números de artigo se referem à Lei nº 13.709/2018
+Rascunho da seção de LGPD do TCC. A análise foi feita sobre o commit
+`d917a88`; a seção 8 registra as correções feitas depois dela. Os números de artigo se referem à Lei nº 13.709/2018
 (LGPD) e devem ser conferidos no texto oficial
 (planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm) antes de
 entrar na versão final. Este texto é análise técnica de um protótipo
@@ -197,3 +197,31 @@ derivam da mesma chave, um vazamento dela compromete ambas.
    (alto).
 7. Política de retenção e um fluxo real de verificação de documentos, ou
    deixar de coletá-los enquanto ele não existir (alto).
+
+## 8. Correções feitas depois da análise
+
+A análise das seções 2 a 7 descreve o sistema como estava no commit
+`d917a88`. Depois dela foram feitas as correções abaixo. Ao implementar a
+correção das lacunas 1 e 2 apareceu uma exposição mais grave, que a análise
+não tinha visto (item A).
+
+| Lacuna | Situação | Onde |
+|---|---|---|
+| **A (nova).** A busca do cuidador enviava ao navegador as coordenadas exatas de cada família: a página passava a um Client Component o objeto completo da família, e tudo que vai como prop é serializado no HTML | **Corrigida.** O navegador do cuidador recebe só nome, cidade, estado, descrição, tipos de cuidado, orçamento e a faixa de distância | `FamilySearchResult` em `lib/matching.ts` |
+| 1. Coordenadas com precisão de rua | **Corrigida.** Guardadas com 2 casas decimais (~1 km). Os dados antigos precisam do script `npm run round:coordinates -- --apply` | `lib/location-privacy.ts`, `lib/geocoding.ts` |
+| 2. Triangulação pela distância | **Corrigida.** O cuidador vê faixas (até 5 km, 5 a 10, 10 a 20, 20 a 50); a API de busca de famílias e o match perfeito também | `formatDistanceBand` |
+| 3. Endereço enviado ao Nominatim | **Mitigada.** Informada na política de privacidade; o envio continua | `app/privacidade/page.tsx` |
+| 4. Sem exclusão de conta | **Corrigida.** Exclusão com confirmação de senha: apaga perfil, contatos, descrição e documentos; anonimiza o usuário; cancela contratações em andamento; mantém o histórico da outra parte sem o nome | `lib/account.ts`, `DELETE /api/account` |
+| 5. Sem exportação | **Corrigida.** Download em JSON com telefone e endereço decifrados | `GET /api/account/export` |
+| 6. Correção parcial | Pendente | — |
+| 7. Sem política nem consentimento | **Corrigida.** Página `/privacidade`; aceite obrigatório no cadastro (`User.privacyAcceptedAt`); consentimento separado e destacado para dados de saúde, sem o qual a descrição da família não é gravada, e cuja revogação apaga a descrição (`FamilyProfile.healthDataConsentAt`) | `app/components/consent-checkboxes.tsx` |
+| 8. Avaliações públicas | **Corrigida.** Exige login e devolve só o primeiro nome do autor | `GET /api/reviews` |
+| 9. Data de nascimento guardada | Pendente | — |
+| 10. Sem política de retenção | Pendente | — |
+| 11. Mesmo banco em desenvolvimento e produção | Pendente (decisão de escopo) | — |
+
+Contas criadas antes dessas mudanças não têm o aceite da política nem o
+consentimento para dados de saúde registrados. As descrições antigas
+continuam gravadas até a família editar o perfil; tratar esse legado (pedir
+o consentimento no próximo acesso ou apagar as descrições) fica como
+trabalho futuro.

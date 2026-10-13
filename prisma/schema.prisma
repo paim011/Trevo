@@ -9,16 +9,19 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  birthDate     DateTime?
-  role          Role      @default(FAMILY)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  name              String?
+  email             String    @unique
+  emailVerified     DateTime?
+  image             String?
+  password          String?
+  birthDate         DateTime?
+  // Quando o usuário aceitou a política de privacidade (/privacidade) no
+  // cadastro. Contas criadas antes deste campo ficam com null.
+  privacyAcceptedAt DateTime?
+  role              Role      @default(FAMILY)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   accounts Account[]
   sessions Session[]
@@ -76,19 +79,23 @@ model VerificationToken {
 }
 
 model FamilyProfile {
-  id               String     @id @default(cuid())
-  userId           String     @unique
-  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  phone            String?
-  city             String?
-  state            String?
-  address          String?
-  bio              String?
-  hourlyBudget     Decimal?   @db.Decimal(10, 2)
-  latitude         Float?
-  longitude        Float?
-  neededCareTypes  CareType[]
+  phone               String?
+  city                String?
+  state               String?
+  address             String?
+  bio                 String?
+  // Consentimento específico e destacado (LGPD, art. 11, I) para as
+  // informações de saúde que a descrição livre pode conter. Sem ele a
+  // descrição não é gravada; revogar o consentimento apaga a descrição.
+  healthDataConsentAt DateTime?
+  hourlyBudget        Decimal?   @db.Decimal(10, 2)
+  latitude            Float?
+  longitude           Float?
+  neededCareTypes     CareType[]
 
   // Indica se esta família aparece quando um cuidador navega/busca famílias
   // ou é casada via Gale-Shapley (ver lib/matching.ts findCandidateFamilies).
@@ -96,14 +103,14 @@ model FamilyProfile {
   // visibilidade é direcional, por lado.
   visibleToCaregivers Boolean @default(true)
 
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model CaregiverProfile {
-  id              String     @id @default(cuid())
-  userId          String     @unique
-  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   phone           String?
   city            String?
@@ -126,10 +133,10 @@ model CaregiverProfile {
   // resultados de busca/matching (ver lib/matching.ts).
   availabilityStatus CaregiverAvailability @default(AVAILABLE)
 
-  documents       Document[]
+  documents Document[]
 
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum CareType {
@@ -145,16 +152,16 @@ enum CaregiverAvailability {
 }
 
 model Document {
-  id          String             @id @default(cuid())
+  id          String           @id @default(cuid())
   caregiverId String
-  caregiver   CaregiverProfile   @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  caregiver   CaregiverProfile @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
 
-  type        DocumentType
-  fileUrl     String
-  status      VerificationStatus @default(PENDING)
+  type    DocumentType
+  fileUrl String
+  status  VerificationStatus @default(PENDING)
 
-  uploadedAt  DateTime           @default(now())
-  reviewedAt  DateTime?
+  uploadedAt DateTime  @default(now())
+  reviewedAt DateTime?
 }
 
 enum DocumentType {
@@ -170,15 +177,15 @@ enum VerificationStatus {
 }
 
 model Hire {
-  id          String     @id @default(cuid())
+  id String @id @default(cuid())
 
-  familyId    String
-  family      User       @relation("HireFamily", fields: [familyId], references: [id])
+  familyId String
+  family   User   @relation("HireFamily", fields: [familyId], references: [id])
 
   caregiverId String
-  caregiver   User       @relation("HireCaregiver", fields: [caregiverId], references: [id])
+  caregiver   User   @relation("HireCaregiver", fields: [caregiverId], references: [id])
 
-  status      HireStatus @default(PENDING)
+  status      HireStatus    @default(PENDING)
   // Quem entrou em contato primeiro -- determina qual lado está "propondo"
   // (pode desistir de um pedido ainda PENDING) vs. "respondendo" (pode
   // aceitar/recusar). Ver lib/hire-transitions.ts. Padrão FAMILY para que
@@ -196,7 +203,7 @@ model Hire {
   // criados antes deste campo existir simplesmente mostram "Tipo não
   // especificado" (ver /dashboard/hires/[id]), mesmo padrão não-retroativo
   // já usado para acceptedAt/completedAt acima.
-  careType    CareType?
+  careType CareType?
 
   // Timestamps reais das duas transições de máquina de estados que importam
   // para exibição (PENDING -> ACCEPTED, ACCEPTED -> COMPLETED), definidos
@@ -214,12 +221,12 @@ model Hire {
   // par família-cuidador" como uma constraint real de banco (não só uma
   // checagem no nível da aplicação), permitindo ainda que um novo Hire seja
   // criado depois que o anterior chegar a um estado terminal.
-  activeHireKey String?  @unique
+  activeHireKey String? @unique
 
-  review      Review?
+  review Review?
 
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum HireStatus {
@@ -236,19 +243,19 @@ enum HireInitiator {
 }
 
 model Review {
-  id        String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  hireId    String   @unique
-  hire      Hire     @relation(fields: [hireId], references: [id], onDelete: Cascade)
+  hireId String @unique
+  hire   Hire   @relation(fields: [hireId], references: [id], onDelete: Cascade)
 
-  authorId  String
-  author    User     @relation("ReviewAuthor", fields: [authorId], references: [id])
+  authorId String
+  author   User   @relation("ReviewAuthor", fields: [authorId], references: [id])
 
-  targetId  String
-  target    User     @relation("ReviewTarget", fields: [targetId], references: [id])
+  targetId String
+  target   User   @relation("ReviewTarget", fields: [targetId], references: [id])
 
-  rating    Int
-  comment   String?
+  rating  Int
+  comment String?
 
   createdAt DateTime @default(now())
 }

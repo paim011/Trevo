@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { redirect } from "next/navigation";
 
+import { AccountDataSection } from "@/app/dashboard/_components/account-data-section";
 import { BackLink } from "@/app/dashboard/_components/back-link";
 import { authOptions } from "@/lib/auth";
 import { tryDecryptField } from "@/lib/field-encryption";
@@ -37,6 +38,7 @@ export default async function EditarPerfilCuidadorPage() {
             visibleToFamilies: profile?.visibleToFamilies ?? true,
           }}
         />
+        <AccountDataSection />
       </div>
     </main>
   );

@@ -8,6 +8,7 @@ import { ConnectionLine } from "@/app/dashboard/familia/_components/connection-l
 import { InteresseButton } from "@/app/dashboard/cuidador/_components/interesse-button";
 import { authOptions } from "@/lib/auth";
 import { CARE_TYPE_LABELS, formatCareTypes } from "@/lib/care-types";
+import { formatDistanceBand } from "@/lib/location-privacy";
 import { findMatchedFamiliesForCaregiver } from "@/lib/matching";
 
 // Mesmo raciocínio do STABLE_MATCH_VISUAL_SCORE de
@@ -73,8 +74,8 @@ export default async function MatchPerfeitoPage() {
                       .join(", ")}
                   </p>
                   <p className="mt-2 font-mono text-xs text-ink/80">
-                    {family.distanceKm !== null
-                      ? `${family.distanceKm.toFixed(1)} km de distância`
+                    {family.distanceBand !== null
+                      ? `${formatDistanceBand(family.distanceBand)} de distância`
                       : "Distância não disponível"}
                     {family.sharedCareTypes.length > 0 &&
                       ` · Busca cuidado para ${formatCareTypes(family.sharedCareTypes)}`}

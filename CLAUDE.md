@@ -473,8 +473,10 @@ mesma estrutura (401 sem sessão, 403 se `role !== CAREGIVER`, 400 com
 campo: `FamilyForDisplay` simplesmente não carrega `address` nenhuma — não
 tem como um consumidor futuro vazar esse dado por engano, porque o tipo não
 o expõe. `GET /api/search/families` monta a resposta final a partir disso
-(`familyId`, `name`, `city`, `state`, `neededCareTypes`, mais `distanceKm`/
-`matchScore` calculados por `rankFamiliesForCaregiver`).
+(`familyId`, `name`, `city`, `state`, `neededCareTypes`, mais a faixa de
+distância `distance` e o `matchScore` calculados por
+`rankFamiliesForCaregiver` — nunca a distância exata; ver "Privacidade e
+direitos do titular").
 `GET /api/matching/stable-match/caregiver` usa o mesmo subconjunto de
 campos privacy-safe, mas busca os perfis direto via Prisma (não passa por
 `rankFamiliesForCaregiver`) e por isso **não** inclui `distanceKm`/
@@ -1094,9 +1096,9 @@ Implementado sobre o model `Review` já existente no schema
 - **Sem edição nem remoção nesta versão** — uma vez criada, a review é 
   permanente. Se isso mudar no futuro, precisa de uma decisão explícita 
   sobre quem pode editar/remover e até quando.
-- `GET /api/reviews?caregiverId=...` é uma rota pública (sem exigir sessão) 
-  — visitantes não autenticados podem ver as avaliações de um cuidador antes 
-  de se cadastrar.
+- `GET /api/reviews?caregiverId=...` exige sessão — era pública, mas expunha
+  a visitantes anônimos quem contratou cada cuidador (ver "Privacidade e
+  direitos do titular").
 
 **`StarRating`** (`app/components/star-rating.tsx`): substitui o
 `<select>` de "Nota" em `review-form.tsx` por 5 estrelas clicáveis.
@@ -1688,7 +1690,46 @@ texto → Camada 1: Cifra Trevo (autoral, chave K1)
   0,1 km permitindo triangulação, `GET /api/reviews` público expondo nome do
   autor, sem exclusão/exportação de conta, bio com dados de saúde em texto
   puro, envio do endereço ao Nominatim). Corrigir uma dessas lacunas no
-  código deve atualizar esse arquivo.
+  código deve atualizar esse arquivo (seção 8 lista o que já foi corrigido).
+
+## Privacidade e direitos do titular (LGPD)
+
+- **Localização (`lib/location-privacy.ts`)**: `lib/geocoding.ts` guarda
+  latitude/longitude com 2 casas decimais (~1 km), nunca a precisão de rua
+  do Nominatim — o endereço é cifrado, então coordenadas exatas em texto
+  puro anulariam essa proteção. Dados antigos: `npm run round:coordinates`
+  (simula; grava com `-- --apply`). Tudo que um **cuidador** vê sobre a
+  distância até uma família é uma faixa (`formatDistanceBand`: até 5, 5 a
+  10, 10 a 20, 20 a 50 km), não o valor exato, para impedir triangulação. O
+  lado família continua vendo a distância exata do cuidador (a localização
+  do cuidador vem só da cidade).
+- **Nunca passar `RankedFamily<FamilyForDisplay>` a um Client Component**:
+  props de Client Component são serializadas no HTML, e esse tipo carrega
+  as coordenadas da família. A busca do cuidador já fez isso (vazava a
+  localização de todas as famílias); hoje passa `FamilySearchResult`
+  (`toFamilySearchResult`, `lib/matching.ts`). A mesma regra vale para
+  qualquer tipo com dado sensível.
+- **Consentimento**: `/privacidade` (página estática) e duas caixas em
+  `app/components/consent-checkboxes.tsx`. Aceite da política é
+  obrigatório no cadastro (`acceptPrivacyPolicy: z.literal(true)`,
+  `User.privacyAcceptedAt`). A descrição da família só é gravada com
+  consentimento para dados de saúde (LGPD art. 11, I —
+  `FamilyProfile.healthDataConsentAt`), checado no cadastro e no `PATCH`;
+  `healthDataConsent: false` no `PATCH` é revogação e apaga a descrição.
+  Migration `20261013120000_add_privacy_consent` (só colunas anuláveis).
+- **Exportação e exclusão (`lib/account.ts`)**: `GET /api/account/export`
+  devolve um JSON com telefone/endereço decifrados.
+  `DELETE /api/account` pede a senha de novo e, numa transação: cancela
+  `Hire`s ativos, apaga `Hire.message` escrita pelo titular, apaga o
+  comentário das reviews que ele escreveu (a nota fica), apaga reviews sobre
+  ele, apaga o perfil (documentos em cascata), `Account`/`Session`, e
+  anonimiza o `User` (nome "Conta excluída", e-mail inválido único, senha
+  `null` — não dá mais para entrar). O `User` não é apagado porque `Hire` e
+  `Review` apontam para ele sem cascata. Os arquivos no Storage são
+  removidos depois da transação. UI: `AccountDataSection`, abaixo do
+  formulário nas duas telas de editar perfil.
+- **`GET /api/reviews` exige login** (era pública) e devolve só nota,
+  comentário, data e o primeiro nome do autor.
 
 ## Identidade do site
 

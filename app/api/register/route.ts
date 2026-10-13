@@ -43,6 +43,11 @@ const baseFields = {
   phone: z.string().regex(PHONE_REGEX, PHONE_INVALID_MESSAGE),
   city: z.string().min(1, "Cidade é obrigatória"),
   state: z.enum(BR_STATE_UFS, { message: "Selecione um estado válido" }),
+  // Registrado em User.privacyAcceptedAt. `literal(true)`: sem o aceite não
+  // há cadastro (ver app/privacidade/page.tsx).
+  acceptPrivacyPolicy: z.literal(true, {
+    message: "É preciso aceitar a política de privacidade",
+  }),
 };
 
 const familySchema = z.object({
@@ -50,9 +55,16 @@ const familySchema = z.object({
   role: z.literal(Role.FAMILY),
   address: z.string().min(1, "Endereço é obrigatório"),
   bio: z.string().optional(),
+  healthDataConsent: z.boolean().optional(),
   hourlyBudget: z.number().positive().optional(),
   neededCareTypes: z.array(z.nativeEnum(CareType)).optional(),
   visibleToCaregivers: z.boolean().optional(),
+}).refine((data) => !data.bio?.trim() || data.healthDataConsent === true, {
+  // Mesma regra de PATCH /api/family-profile: a descrição pode conter
+  // informações de saúde (dado sensível, LGPD art. 11, I), então só é
+  // gravada com consentimento específico.
+  message: "Para incluir uma descrição, autorize o tratamento das informações de saúde",
+  path: ["healthDataConsent"],
 });
 
 const caregiverSchema = z.object({
@@ -104,6 +116,7 @@ export async function POST(request: Request) {
           birthDate: data.birthDate,
           password: hashedPassword,
           role: data.role,
+          privacyAcceptedAt: new Date(),
         },
       });
 
@@ -119,7 +132,8 @@ export async function POST(request: Request) {
             city: data.city,
             state: data.state,
             address: encryptField(data.address, "familyProfile.address", createdUser.id),
-            bio: data.bio,
+            bio: data.bio?.trim() || null,
+            healthDataConsentAt: data.healthDataConsent ? new Date() : null,
             hourlyBudget: data.hourlyBudget,
             neededCareTypes: data.neededCareTypes ?? [],
             visibleToCaregivers: data.visibleToCaregivers,

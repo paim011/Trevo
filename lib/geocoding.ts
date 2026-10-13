@@ -1,3 +1,5 @@
+import { roundCoordinate } from "@/lib/location-privacy";
+
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 const USER_AGENT = "CuidadoresApp/1.0";
 const MIN_INTERVAL_MS = 1000;
@@ -71,7 +73,8 @@ export async function geocodeAddress(
         return null;
       }
 
-      return { latitude, longitude };
+      // Só a localização aproximada é guardada -- ver lib/location-privacy.ts.
+      return { latitude: roundCoordinate(latitude), longitude: roundCoordinate(longitude) };
     });
   } catch {
     return null;

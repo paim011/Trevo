@@ -8,6 +8,7 @@ import {
 import { getSharedCareTypes } from "@/lib/care-types";
 import { stableMatching } from "@/lib/gale-shapley";
 import { haversineDistanceKm } from "@/lib/haversine";
+import { distanceBand } from "@/lib/location-privacy";
 import { matchingConfig } from "@/lib/matching-config";
 import { prisma } from "@/lib/prisma";
 import { calculateAverageRating } from "@/lib/reviews";
@@ -76,6 +77,46 @@ export type RankedFamily<F extends FamilyCandidate = FamilyCandidate> = {
   distanceKm: number;
   matchScore: number;
 };
+
+// O que o navegador de um cuidador recebe de cada família da busca. Tudo que
+// um Server Component passa como prop a um Client Component é serializado no
+// HTML da página, então RankedFamily<FamilyForDisplay> não pode sair do
+// servidor: ele carrega latitude/longitude da família (a localização da
+// casa) e a distância exata (que permite triangular a casa). Aqui ficam só
+// os campos de exibição e a faixa de distância -- ver lib/location-privacy.ts.
+export type FamilySearchResult = {
+  family: {
+    userId: string;
+    name: string | null;
+    city: string | null;
+    state: string | null;
+    bio: string | null;
+    neededCareTypes: CareType[];
+    hourlyBudget: number | null;
+  };
+  distanceBand: number;
+  matchScore: number;
+};
+
+export function toFamilySearchResult({
+  family,
+  distanceKm,
+  matchScore,
+}: RankedFamily<FamilyForDisplay>): FamilySearchResult {
+  return {
+    family: {
+      userId: family.userId,
+      name: family.name,
+      city: family.city,
+      state: family.state,
+      bio: family.bio,
+      neededCareTypes: family.neededCareTypes,
+      hourlyBudget: family.hourlyBudget,
+    },
+    distanceBand: distanceBand(distanceKm),
+    matchScore,
+  };
+}
 
 // Wrapper de Haversine null-safe -- coordenadas são sempre opcionais (Float?)
 // nos dois models de profile, então qualquer chamador trabalhando com um
@@ -625,15 +666,17 @@ export async function findMatchedCaregiverForFamily(
 // GET /api/search/families (sem `address`, ver FamilyForDisplay), mas sem um
 // `matchScore` 0-1 já que o Gale-Shapley não produz um da forma que a busca
 // ponderada produz (mesmo raciocínio da rota stable-match do lado família).
-// distanceKm/sharedCareTypes são os mesmos extras só para exibição de
-// MatchedCaregiverForFamily acima.
+// sharedCareTypes é o mesmo extra só para exibição de
+// MatchedCaregiverForFamily acima. A distância vai como faixa, não em km:
+// quem recebe esta forma é um cuidador, e a distância exata até a família
+// permite triangular a casa dela (ver lib/location-privacy.ts).
 export type MatchedFamilyForCaregiver = {
   familyId: string;
   name: string | null;
   city: string | null;
   state: string | null;
   neededCareTypes: CareType[];
-  distanceKm: number | null;
+  distanceBand: number | null;
   sharedCareTypes: CareType[];
 };
 
@@ -682,7 +725,7 @@ export async function findMatchedFamiliesForCaregiver(
       city: profile.city,
       state: profile.state,
       neededCareTypes: profile.neededCareTypes,
-      distanceKm,
+      distanceBand: distanceKm === null ? null : distanceBand(distanceKm),
       sharedCareTypes,
     };
   });
