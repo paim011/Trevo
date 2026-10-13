@@ -1,0 +1,10 @@
+﻿cenario;caso;tentativas;lancou_erro;saida_incorreta_sem_aviso;saida_correta
+C1;chave errada;100;0;100;0
+C1;texto cifrado truncado em 1 byte;100;0;100;0
+C1;texto cifrado vazio;100;0;100;0
+C2;chave errada;100;100;0;0
+C2;texto cifrado truncado em 1 byte;100;100;0;0
+C2;texto cifrado vazio;100;100;0;0
+C3;chave errada;100;100;0;0
+C3;texto cifrado truncado em 1 byte;100;100;0;0
+C3;texto cifrado vazio;100;100;0;0

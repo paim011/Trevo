@@ -1,0 +1,10 @@
+﻿cenario;tipo_entrada;tamanhos_testados;falhas
+C1;bytes aleatorios;305;0
+C1;texto UTF-8;305;0
+C1;bytes zerados;305;0
+C2;bytes aleatorios;305;0
+C2;texto UTF-8;305;0
+C2;bytes zerados;305;0
+C3;bytes aleatorios;305;0
+C3;texto UTF-8;305;0
+C3;bytes zerados;305;0

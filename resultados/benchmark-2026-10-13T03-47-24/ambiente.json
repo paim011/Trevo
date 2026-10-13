@@ -1,0 +1,29 @@
+{
+  "data": "2026-10-13T03:47:24.135Z",
+  "duracao_segundos": 18,
+  "modo": "oficial",
+  "semente": "trevo-tcc",
+  "rodadas_desempenho": 30,
+  "lote_alvo_ms": 10,
+  "tentativas": 1000,
+  "tentativas_ataque": 5,
+  "node": "v24.19.0",
+  "sistema": "win32 10.0.26200",
+  "processador": "AMD Ryzen 5 7535HS with Radeon Graphics        ",
+  "nucleos": 12,
+  "memoria_gb": 15,
+  "commit": "210fd82",
+  "alteracoes_nao_commitadas": false,
+  "veredictos": [
+    "H1: CONFIRMADA -- 0 falha(s) no total",
+    "H3: CONFIRMADA -- C1 com 0 byte extra; C2 e C3 com 28 bytes extras em todos os tamanhos",
+    "H6: CONFIRMADA -- saídas distintas: C1 1, C2 1000, C3 1000",
+    "H4: CONFIRMADA -- detecção C1 0,00%, C2 100,00%, C3 100,00%",
+    "H5: CONFIRMADA -- C2 e C3 recusam toda entrada inválida; C1 devolve dado errado sem aviso",
+    "H7: CONFIRMADA -- rejeita uniformidade: texto puro sim, C1 sim, C2 não, C3 não",
+    "H8: CONFIRMADA -- com 1 bit da entrada alterado, nenhum cenário muda mais de 5% do corpo cifrado: C1 0,78%, C2 0,20%, C3 0,78%",
+    "H9: CONFIRMADA -- nenhum cenário supera o chute trivial (17,28%)",
+    "H2(a): CONFIRMADA -- C3 mais lenta que C2 em todos os tamanhos, sem sobreposição dos IC95",
+    "H2(b): CONFIRMADA -- pior mediana de C3 até 1.024 bytes: 122,66 µs (limite 1.000 µs)"
+  ]
+}

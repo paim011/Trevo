@@ -1,0 +1,5 @@
+﻿cenario;bytes;entropia_bits_por_byte;indice_coincidencia;qui_quadrado;p_valor;rejeita_uniformidade
+texto puro;2363;4,24997;0,075737;43689,157427;0;sim
+C1;2363;7,518224;0,006121;1594,003809;0;sim
+C2;2391;7,919194;0,003913;259,258469;0,414085;nao
+C3;2391;7,92231;0,003897;249,622334;0,583283;nao

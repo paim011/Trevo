@@ -1,0 +1,4 @@
+﻿cenario;tentativas;detectadas;nao_detectadas_texto_alterado;nao_detectadas_texto_intacto;taxa_deteccao;media_bytes_alterados_sem_aviso
+C1;1000;0;1000;0;0;1
+C2;1000;1000;0;0;1;0
+C3;1000;1000;0;0;1;0
