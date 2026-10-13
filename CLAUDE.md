@@ -1807,9 +1807,15 @@ linguagem visual do `cardClass` mas sem a largura máxima fixa).
 
 ## Deploy (Vercel)
 
-Aplicação publicada na Vercel, conectada ao repositório GitHub
-(`github.com/joaovictorpt/cuidadores-app`) via integração nativa — todo push
-na branch `main` dispara um deploy automático de produção, sem passo manual.
+Aplicação publicada na Vercel (projeto `trevo`, equipe `trevo6`, conta
+`paim011`), conectada ao repositório GitHub `github.com/paim011/Trevo` via
+integração nativa — todo push na branch `main` dispara um deploy automático
+de produção, sem passo manual. O projeto começou no repositório
+`github.com/joaovictorpt/cuidadores-app` (remoto `upstream` no clone local,
+nunca usado para push); em 13/10/2026 passou para contas próprias — GitHub,
+Supabase e Vercel novos, banco populado só com `seed:demo`, sem copiar dados
+do ambiente antigo. A autoria de commits locais foi corrigida nessa migração
+(ver `docs/historico-de-commits.md`).
 
 - **`"build": "prisma generate && next build"`** — o script `build` chama
   `prisma generate` explicitamente antes do `next build`, em vez de confiar
@@ -1835,19 +1841,32 @@ na branch `main` dispara um deploy automático de produção, sem passo manual.
   mesma necessidade (Prisma Client sincronizado com o schema), só que
   disparado em qualquer `npm install` (local ou CI), não só no `build` da
   Vercel.
-- **Banco de dados**: mesma instância do Supabase usada em desenvolvimento
-  (não há ambiente de staging/produção separado — decisão consciente de
-  simplicidade para o escopo de TCC, não recomendada para um produto real
-  com usuários de verdade).
-- **Variáveis de ambiente configuradas nas Environment Variables do projeto
-  na Vercel** (mesmos nomes do `.env` local): `DATABASE_URL`, `DIRECT_URL`,
-  `NEXTAUTH_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, e
-  `NEXTAUTH_URL` (**esta precisa ser o domínio de produção real,
-  `https://cuidadores-app.vercel.app` — não `localhost`**; sem isso o login
-  falha em produção).
-- Domínio de produção estável: `cuidadores-app.vercel.app` (a Vercel também
+- **Banco de dados**: projeto Supabase próprio na região São Paulo
+  (`sa-east-1`), separado do banco de desenvolvimento — o `.env` local aponta
+  para um PostgreSQL em `localhost`. As credenciais de produção ficam em
+  `.env.producao` (ignorado pelo Git); para rodar um comando contra produção:
+  `set -a; source .env.producao; set +a; <comando>` (ex.:
+  `npx prisma migrate deploy`, `npm run seed:demo`). `DATABASE_URL` usa o
+  *transaction pooler* (porta 6543, `?pgbouncer=true`) e `DIRECT_URL` o
+  *session pooler* (porta 5432) — a conexão direta `db.<ref>.supabase.co` só
+  tem IPv6 no plano gratuito e não funciona na Vercel.
+- **Variáveis de ambiente na Vercel** (mesmos valores de `.env.producao`):
+  `DATABASE_URL`, `DIRECT_URL`, `NEXTAUTH_SECRET`, `SUPABASE_URL`,
+  `SUPABASE_SERVICE_ROLE_KEY`, `FIELD_ENCRYPTION_KEY` e `NEXTAUTH_URL` — esta
+  só em Production, com o domínio real (`https://trevo-trevo6.vercel.app`);
+  **nunca vazia** (uma `NEXTAUTH_URL=""` quebra o build com `Invalid URL`);
+  nos previews a biblioteca usa `VERCEL_URL` sozinha.
+- Domínio de produção estável: `trevo-trevo6.vercel.app` (a Vercel também
   gera uma URL única por deploy, com hash, que não deve ser usada em nenhuma
   variável de ambiente por não ser permanente).
+- **Região das funções: `gru1` (São Paulo)**, fixada em `vercel.json` — mesma
+  região do banco, e processamento dos dados pessoais no Brasil.
+- **Proteção de deployment**: modo padrão
+  (`prod_deployment_urls_and_all_previews`) — o domínio de produção é
+  público e os previews exigem login na Vercel. O modo que vem em projetos
+  novos (`all_except_custom_domains`) bloqueia também o domínio
+  `.vercel.app`, e o site inteiro passa a redirecionar para o login da
+  Vercel.
 
 ## Dados de demonstração
 

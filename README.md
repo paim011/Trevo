@@ -4,7 +4,7 @@ Um marketplace de dois lados para conectar famílias que precisam de
 cuidadores (para idosos, crianças ou pessoas com necessidades especiais) a
 cuidadores profissionais.
 
-🔗 **[trevo em produção →](https://cuidadores-app.vercel.app)**
+🔗 **[trevo em produção →](https://trevo-trevo6.vercel.app)**
 
 ---
 
@@ -56,7 +56,7 @@ residência médica.
 ## Rodando localmente
 
 ```bash
-git clone https://github.com/joaovictorpt/cuidadores-app.git
+git clone https://github.com/paim011/Trevo.git
 cd cuidadores-app
 npm install
 ```
@@ -92,10 +92,15 @@ precisar cadastrar tudo manualmente. Para limpar:
 npm run cleanup:demo
 ```
 
-## Autor
+## Autores
 
-João Victor Porto Tolentino — Ciência da Computação, UNIP (previsão de
-conclusão: 06/2027)
+Trabalho de Conclusão de Curso em Ciência da Computação, UNIP:
 
-[LinkedIn](https://linkedin.com/in/joão-victor-porto-tolentino-501ba1402) ·
-[GitHub](https://github.com/joaovictorpt)
+- João Victor Porto Tolentino ·
+  [LinkedIn](https://linkedin.com/in/joão-victor-porto-tolentino-501ba1402) ·
+  [GitHub](https://github.com/joaovictorpt)
+- José Carlos Paim Pamplona · [GitHub](https://github.com/paim011)
+- Elvis Cabral de Melo
+
+Este repositório continua o projeto original de
+[joaovictorpt/cuidadores-app](https://github.com/joaovictorpt/cuidadores-app).
