@@ -83,10 +83,28 @@ Implementado em `lib/auth.ts` (`authOptions`) e `app/api/auth/[...nextauth]/rout
   e a API captura o erro `P2002`, retornando 409. Evita condição de corrida
   entre duas requisições simultâneas com o mesmo email.
 
+## Testes de controle de acesso (`npm run test:security`)
+
+`scripts/test-security.ts` verifica, contra o site publicado
+(`SECURITY_TEST_URL`, padrão `https://trevo-trevo6.vercel.app`) e com as contas
+de `seed:demo`, as regras de quem vê o quê: contato só depois do aceite,
+contratação alheia como 404, avaliações e exportação exigindo login, cuidador
+sem acesso à API de perfil de família, busca de famílias sem
+coordenadas/endereço e com distância em faixas, e HTML da busca sem
+coordenadas. **Só faz GET e o login das contas de demonstração** — nunca grava.
+A recusa do papel `ADMIN` é testada direto no `registerSchema`, sem requisição,
+para não arriscar criar uma conta em produção; foi por isso que o schema saiu
+de `app/api/register/route.ts` para `lib/register-schema.ts` (um route handler
+do Next.js só pode exportar os métodos HTTP). Cada verificação negativa tem um
+controle positivo no mesmo teste (o detector de telefone precisa achar o número
+na contratação aceita; o mesmo cadastro com papel `FAMILY` precisa passar), para
+que um teste quebrado não passe "por vacuidade". Resultado registrado na seção
+4.5 da monografia.
+
 ## Cadastro: campos obrigatórios, maioridade e localização
 
 Campos obrigatórios em `POST /api/register` (schema Zod em
-`app/api/register/route.ts`), para os dois branches (`FAMILY` e
+`lib/register-schema.ts`, usado por `app/api/register/route.ts`), para os dois branches (`FAMILY` e
 `CAREGIVER`): `name`, `birthDate`, `phone`, `city`, `state`. `address` é
 obrigatório **só no branch `FAMILY`** — `CaregiverProfile` não tem coluna de
 endereço (ver "Geolocalização" abaixo), então não há o que validar como
@@ -95,7 +113,7 @@ leitura consistente com o schema atual sem adicionar uma coluna nova.
 
 - **Maioridade (18+)**: `lib/age.ts` (`calculateAge`/`isAdult`,
   `MIN_REGISTRATION_AGE = 18`) é a fonte única da regra, usada tanto no
-  `.refine()` do Zod (autoritativo, `app/api/register/route.ts`) quanto nos
+  `.refine()` do Zod (autoritativo, `lib/register-schema.ts`) quanto nos
   dois formulários de cadastro (`app/cadastro/familia/page.tsx`,
   `app/cadastro/cuidador/page.tsx`) para feedback instantâneo antes mesmo do
   submit — igual ao padrão já usado em `lib/hire-transitions.ts`. Calcula
@@ -107,7 +125,7 @@ leitura consistente com o schema atual sem adicionar uma coluna nova.
   abaixo para o campo em si) rejeita datas futuras ou anteriores a 1900.
   Aplicado em duas camadas: a checagem client-side antes do submit (mesma
   função, feedback instantâneo) e o `.refine()` autoritativo no Zod
-  (`app/api/register/route.ts`) — a ordem dos três `.refine()` encadeados
+  (`lib/register-schema.ts`) — a ordem dos três `.refine()` encadeados
   ali importa: futuro/muito antigo é checado *antes* da regra de maioridade,
   senão uma data absurda mostra a mensagem confusa "menor de idade" em vez
   de apontar o problema real na data. Antes de virar o campo mascarado
@@ -138,7 +156,7 @@ leitura consistente com o schema atual sem adicionar uma coluna nova.
 
 - `lib/br-states.ts`: lista fixa das 27 UFs (sigla + nome), usada tanto para
   popular as opções de "Estado" quanto para validar server-side
-  (`z.enum(BR_STATE_UFS, ...)` em `app/api/register/route.ts`) — uma sigla
+  (`z.enum(BR_STATE_UFS, ...)` em `lib/register-schema.ts`) — uma sigla
   fora da lista nunca é aceita.
 - `lib/use-ibge-cities.ts`: hook que busca as cidades do estado escolhido na
   API pública do IBGE
@@ -1501,7 +1519,7 @@ fonte única dessa regra — mesmo padrão de `lib/age.ts` para a idade mínima:
 um só lugar validando, reaproveitado no client e no servidor, pra nunca
 divergir.
 - **Servidor (autoritativo)**: `phone: z.string().regex(PHONE_REGEX, ...)`
-  em `app/api/register/route.ts` (ambos os branches, `FAMILY` e
+  em `lib/register-schema.ts` (ambos os branches, `FAMILY` e
   `CAREGIVER`, já que `phone` está em `baseFields`, compartilhado pelos
   dois) e `.regex(PHONE_REGEX, ...).optional()` em `app/api/family-profile/route.ts`
   e `app/api/caregiver-profile/route.ts` — nessas duas o campo continua

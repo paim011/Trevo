@@ -11,6 +11,7 @@
     "test:matching": "tsx scripts/test-matching.ts",
     "test:gale-shapley": "tsx scripts/test-gale-shapley.ts",
     "test:encryption": "tsx scripts/test-field-encryption.ts",
+    "test:security": "tsx scripts/test-security.ts",
     "demo:attacks": "tsx scripts/demo-attacks.ts",
     "benchmark": "tsx scripts/benchmark-ciphers.ts",
     "encrypt:existing": "tsx scripts/encrypt-existing-data.ts",
