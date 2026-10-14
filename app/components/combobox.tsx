@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { inputClass } from "@/lib/ui";
 
@@ -60,11 +60,16 @@ export function Combobox({
 
   // Mantém o texto exibido sincronizado quando a seleção muda a partir de
   // fora (ex.: LocationFields resetando a cidade para "" quando o estado
-  // muda).
-  useEffect(() => {
+  // muda). Ajuste feito durante a renderização, comparando com o valor
+  // anterior, em vez de um useEffect -- evita uma segunda renderização em
+  // cascata (padrão "ajustar estado quando uma prop muda" da documentação
+  // do React).
+  const [previousSelected, setPreviousSelected] = useState(selectedOption);
+  if (selectedOption !== previousSelected) {
+    setPreviousSelected(selectedOption);
     setQuery(selectedOption?.label ?? "");
     setHasUserTyped(false);
-  }, [selectedOption]);
+  }
 
   const filteredOptions = useMemo(() => {
     if (!hasUserTyped || !query.trim()) return options;
@@ -72,9 +77,12 @@ export function Combobox({
     return options.filter((option) => normalizeForSearch(option.label).includes(needle));
   }, [options, query, hasUserTyped]);
 
-  useEffect(() => {
+  // Volta o destaque para a primeira opção sempre que a lista filtrada muda.
+  const [previousFiltered, setPreviousFiltered] = useState(filteredOptions);
+  if (filteredOptions !== previousFiltered) {
+    setPreviousFiltered(filteredOptions);
     setHighlightedIndex(0);
-  }, [filteredOptions]);
+  }
 
   function commit(option: ComboboxOption | null) {
     onChange(option?.value ?? "");

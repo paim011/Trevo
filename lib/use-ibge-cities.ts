@@ -10,26 +10,25 @@ type UseIbgeCitiesResult = {
   error: string | null;
 };
 
+// Resultado da última busca, guardado junto com a UF a que se refere: assim,
+// "carregando" é derivado (a UF pedida ainda não tem resultado) em vez de ser
+// um estado ligado e desligado dentro do efeito.
+type FetchResult = { uf: string; cities: string[]; error: string | null };
+
+const LOAD_ERROR_MESSAGE =
+  "Não foi possível carregar a lista de cidades agora. Digite o nome da cidade manualmente.";
+
 // Busca a lista de cidades de um estado brasileiro na API pública do IBGE.
 // Uma falha de rede/API nunca lança erro -- ela aparece como `error` para
 // que os chamadores possam recair num input de texto simples em vez de
 // deixar o <select> de cidade travado bloqueando o resto do formulário.
 export function useIbgeCities(uf: string): UseIbgeCitiesResult {
-  const [cities, setCities] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<FetchResult | null>(null);
 
   useEffect(() => {
-    if (!uf) {
-      setCities([]);
-      setError(null);
-      setLoading(false);
-      return;
-    }
+    if (!uf) return;
 
     let cancelled = false;
-    setLoading(true);
-    setError(null);
 
     fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`)
       .then((response) => {
@@ -43,17 +42,11 @@ export function useIbgeCities(uf: string): UseIbgeCitiesResult {
         const names = municipios
           .map((municipio) => municipio.nome)
           .sort((a, b) => a.localeCompare(b, "pt-BR"));
-        setCities(names);
+        setResult({ uf, cities: names, error: null });
       })
       .catch(() => {
         if (cancelled) return;
-        setCities([]);
-        setError(
-          "Não foi possível carregar a lista de cidades agora. Digite o nome da cidade manualmente."
-        );
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        setResult({ uf, cities: [], error: LOAD_ERROR_MESSAGE });
       });
 
     return () => {
@@ -61,5 +54,12 @@ export function useIbgeCities(uf: string): UseIbgeCitiesResult {
     };
   }, [uf]);
 
-  return { cities, loading, error };
+  if (!uf) return { cities: [], loading: false, error: null };
+
+  const current = result?.uf === uf ? result : null;
+  return {
+    cities: current?.cities ?? [],
+    loading: current === null,
+    error: current?.error ?? null,
+  };
 }
