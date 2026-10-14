@@ -218,7 +218,7 @@ não tinha visto (item A).
 | 8. Avaliações públicas | **Corrigida.** Exige login e devolve só o primeiro nome do autor | `GET /api/reviews` |
 | 9. Data de nascimento guardada | Pendente | — |
 | 10. Sem política de retenção | Pendente | — |
-| 11. Mesmo banco em desenvolvimento e produção | Pendente (decisão de escopo) | — |
+| 11. Mesmo banco em desenvolvimento e produção | **Corrigida.** Na publicação nas contas próprias, a produção passou a um projeto Supabase separado em São Paulo, e o desenvolvimento usa um PostgreSQL local; as conexões de produção exigem TLS (`sslmode=require`) | `.env.producao`, variáveis da Vercel |
 
 Contas criadas antes dessas mudanças não têm o aceite da política nem o
 consentimento para dados de saúde registrados. As descrições antigas

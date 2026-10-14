@@ -45,3 +45,6 @@ next-env.d.ts
 
 # execuções rápidas do benchmark (só conferem o script; não são resultado oficial)
 /resultados/*-rapido/
+
+.vercel
+.env*

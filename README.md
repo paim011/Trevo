@@ -57,7 +57,7 @@ residência médica.
 
 ```bash
 git clone https://github.com/paim011/Trevo.git
-cd cuidadores-app
+cd Trevo
 npm install
 ```
 

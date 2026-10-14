@@ -1849,7 +1849,12 @@ do ambiente antigo. A autoria de commits locais foi corrigida nessa migração
   `npx prisma migrate deploy`, `npm run seed:demo`). `DATABASE_URL` usa o
   *transaction pooler* (porta 6543, `?pgbouncer=true`) e `DIRECT_URL` o
   *session pooler* (porta 5432) — a conexão direta `db.<ref>.supabase.co` só
-  tem IPv6 no plano gratuito e não funciona na Vercel.
+  tem IPv6 no plano gratuito e não funciona na Vercel. As duas strings
+  terminam com `sslmode=require` (`?pgbouncer=true&sslmode=require` e
+  `?sslmode=require`): sem isso o Prisma aceita conexão sem TLS, e a
+  monografia afirma que a ligação da aplicação com o banco é cifrada.
+  Conferir com `pg_stat_ssl` não serve aqui — via pooler ela mostra o trecho
+  pooler→banco, interno ao Supabase, não o trecho aplicação→pooler.
 - **Variáveis de ambiente na Vercel** (mesmos valores de `.env.producao`):
   `DATABASE_URL`, `DIRECT_URL`, `NEXTAUTH_SECRET`, `SUPABASE_URL`,
   `SUPABASE_SERVICE_ROLE_KEY`, `FIELD_ENCRYPTION_KEY` e `NEXTAUTH_URL` — esta
